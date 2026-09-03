@@ -4,25 +4,38 @@
 
 ```markdown
 ### ADVISOR VERDICT: APPROVED
-**Executive Summary:** The blueprint defines strict boundaries, isolates file ownership cleanly across waves, and establishes an observable verification target without speculative dependencies.
-**Verified Invariants:**
+**Executive Summary:** The blueprint defines strict architectural boundaries, complete user business scenarios, and explicit edge case handling for concurrent lock contention and process recovery.
+
+**Verified Invariants & Architecture:**
 - Grounded against physical codebase: verified `src/storage/` module structure via `sot_search`.
 - Blast radius bounded: no public API signatures altered.
+
+**Verified Business Tests & Edge Cases:**
+- **User / Epic Story Flows:** Concurrent reader query flow during active checkpointing is explicitly covered.
+- **Business Edge Cases:** Lock contention backoff, mid-truncation crash recovery, and read-only permissions failure modes are all specified.
+- **Execution Evidence:** Target command `pytest tests/test_wal_checkpoint.py -v` defined with clear assertions.
+
 **Residual Risks / Blockers:**
 - None
 ```
 
 ---
 
-## Example B: Needs Revision / Rejected (Delivery Gate with Blocker)
+## Example B: Rejected (Blueprint Gate - Missing Business Edge Cases)
 
 ```markdown
-### ADVISOR VERDICT: NEEDS_REVISION
-**Executive Summary:** Implementation leaves a potential file handle leak in the error path of WAL truncation, and blast radius analysis revealed an unhandled upstream caller in `session_store.py`.
-**Verified Invariants:**
-- Reverse call graph blast radius check (`sot_diff_impact`) failed: `session_store.py:142` calls `checkpoint()` with obsolete argument arity.
-- Invariant breached: Subprocess execution does not release write lock upon timeout.
+### ADVISOR VERDICT: REJECTED
+**Executive Summary:** The blueprint provides an implementation skeleton but completely lacks business edge cases and user journey verification for unauthorized access and double-submission.
+
+**Verified Invariants & Architecture:**
+- Architecture draft is syntactically coherent, but invariants are incomplete.
+
+**Verified Business Tests & Edge Cases:**
+- **User / Epic Story Flows:** Only covers simple single-call success path.
+- **Business Edge Cases:** Missing crucial edge cases: (1) Expired token during mid-transaction, (2) Duplicate payment request with same Idempotency-Key, (3) Insufficient balance boundary condition.
+- **Execution Evidence:** Test specification is absent (no target CLI test command).
+
 **Residual Risks / Blockers:**
-- Blocker 1: Fix upstream caller signature in `src/storage/session_store.py:142`.
-- Blocker 2: Wrap WAL file descriptor in `try...finally` to guarantee resource cleanup.
+- Blocker 1: Plan must add an explicit "Business Scenarios & Edge Cases" section specifying test assertions for concurrent double-clicks and tenant isolation.
+- Blocker 2: Specify exact test command and test file location.
 ```
