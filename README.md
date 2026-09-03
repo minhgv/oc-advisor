@@ -1,7 +1,8 @@
 # OpenCode Advisor (`oc-advisor`)
 
 > **Stage-3 Architectural Authority & Definitive Gatekeeper Subagent for OpenCode**  
-> Ported from the architectural gatekeeper mechanism of **OMP ([oh-my-pi](https://github.com/can1357/oh-my-pi))** and aligned with **AI Coding Constitution (v6.10, Art 17.1)**.
+> Ported from the architectural gatekeeper mechanism of **OMP ([oh-my-pi](https://github.com/can1357/oh-my-pi))** and aligned with **AI Coding Constitution (v6.10, Art 17.1)**.  
+> **Pinned Model:** `openai/gpt-5.6-sol`
 
 ---
 
@@ -14,6 +15,7 @@ Trong các hệ thống đa agent (multi-agent coding systems), rủi ro lớn n
 4. **Gãy vỡ liên kết ngầm (Unchecked Blast Radius):** Sửa code làm hỏng các module tầng trên mà không kiểm tra đồ thị phụ thuộc ngược.
 
 **`oc-advisor`** giải quyết triệt để các vấn đề trên với mô hình kết hợp **"Tư vấn đi trước (Shift-Left) + Thẩm định chốt chặn (Gatekeeper)"**:
+- **Cố định mô hình suy luận đỉnh cao (`openai/gpt-5.6-sol`):** Đảm bảo năng lực đánh giá logic, kiến trúc hệ thống và bảo mật sâu sắc nhất, không bị phụ thuộc vào model đang code.
 - **Tư vấn định hướng trước khi lập plan (Pre-Planning Consultation):** Định hướng kiến trúc, chỉ rõ ranh giới file, liệt kê checklist edge cases bắt buộc.
 - **Bắt buộc kịch bản nghiệp vụ người dùng & Edge Cases:** Blueprint phải có ma trận kiểm thử người dùng đầy đủ mới được duyệt qua Gate 1.
 - **Quyền hạn thẩm định dứt khoát (1-Pass Gate):** Ra phán quyết một lần duy nhất (`APPROVED` hoặc `REJECTED`), tuyệt đối không lặp vòng review-fix ngầm.
@@ -25,22 +27,22 @@ Trong các hệ thống đa agent (multi-agent coding systems), rủi ro lớn n
 
 ```
                        BƯỚC 0: TƯ VẤN ĐỊNH HƯỚNG (Consultation)
-     [Main Agent] ──────────────────────────────────────────► [Advisor]
+     [Main Agent] ──────────────────────────────────────────► [Advisor (gpt-5.6-sol)]
                   "Tôi muốn làm tính năng X,                 - Tra cứu SOT-Graph tìm modules liên quan
                    hãy định hướng kiến trúc, ranh giới file, - Vạch ra rủi ro tiềm ẩn
                    và các edge cases nghiệp vụ cần đưa vào?"  - Liệt kê Checklist Edge Cases bắt buộc
                   ◄──────────────────────────────────────────
-                         Trả về: Architectural Guidance
+                         Trả về: Architectural Guidance (Không ra verdict Approved/Reject)
 
                                        │
                                        ▼
                     BƯỚC 1: SOẠN VÀ DUYỆT PLAN (Gate 1: Blueprint Gate)
-     [Main Agent] ──(Soạn Plan chuẩn theo Checklist)────────► [Advisor] ──► [VERDICT: APPROVED] (1-Pass)
+     [Main Agent] ──(Soạn Plan chuẩn theo Checklist)────────► [Advisor (gpt-5.6-sol)] ──► [VERDICT: APPROVED] (1-Pass)
 
                                        │
                                        ▼
                     BƯỚC 2: CODE, TEST & NGHIỆM THU (Gate 2: Delivery Gate)
-     [Workers] ─────(Thực thi code + chạy test nghiệp vụ)────► [Advisor] ──► [VERDICT: APPROVED] (Release)
+     [Workers] ─────(Thực thi code + chạy test nghiệp vụ)────► [Advisor (gpt-5.6-sol)] ──► [VERDICT: APPROVED] (Release)
 ```
 
 ### 🔹 Chế độ 1: Tư vấn định hướng (Pre-Planning Consultation)
@@ -166,7 +168,7 @@ oc-advisor/
 ├── README.md                          # Tài liệu hướng dẫn chi tiết
 ├── install.sh                         # Script cài đặt vào ~/.config/opencode
 ├── agents/
-│   └── advisor.md                     # Agent definition chuẩn OpenCode (mode: all)
+│   └── advisor.md                     # Agent definition chuẩn OpenCode (mode: all, model: openai/gpt-5.6-sol)
 └── examples/
     ├── consultation_prompt.md         # Mẫu prompt xin định hướng trước khi lập plan
     ├── blueprint_approval_prompt.md   # Mẫu prompt duyệt blueprint kèm kịch bản test nghiệp vụ

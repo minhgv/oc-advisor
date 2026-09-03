@@ -1,6 +1,7 @@
 ---
 description: Stage-3 Architectural Authority & Gatekeeper. Provides pre-planning architectural guidance, evaluates blueprints, validates systemic risks, enforces business test scenarios, and issues definitive approval.
 mode: all
+model: openai/gpt-5.6-sol
 permission:
   "*": deny
   read: allow
