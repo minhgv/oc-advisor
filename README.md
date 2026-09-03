@@ -1,6 +1,6 @@
 # OpenCode Advisor (`oc-advisor`)
 
-> **Stage-3 Final Gatekeeper & Architectural Authority Subagent for OpenCode**  
+> **Stage-3 Architectural Authority & Definitive Gatekeeper Subagent for OpenCode**  
 > Ported from the architectural gatekeeper mechanism of **OMP ([oh-my-pi](https://github.com/can1357/oh-my-pi))** and aligned with **AI Coding Constitution (v6.10, Art 17.1)**.
 
 ---
@@ -8,46 +8,64 @@
 ## 🎯 Giới thiệu (Overview)
 
 Trong các hệ thống đa agent (multi-agent coding systems), rủi ro lớn nhất là:
-1. **Spec Drift & Thiếu Test nghiệp vụ:** Agent tự ý viết code khi kế hoạch (blueprint) chưa hề vạch ra các kịch bản test nghiệp vụ người dùng hoặc bỏ quên các edge cases nghiêm trọng.
-2. **Nghiệm thu bằng mắt (Blind Approval):** Agent code xong tự nhận là "đã hoàn thành" mà không hề thực sự chạy test kiểm chứng với lệnh thực thi cụ thể.
-3. **Review Ping-Pong:** Agent sửa đi sửa lại vòng tròn (infinite fix-review loops) mà không có trọng tài chốt hạ dứt khoát.
-4. **Unchecked Blast Radius:** Thay đổi code làm gãy vỡ các caller ở tầng trên mà không được kiểm tra tác động ngược.
+1. **Agent mò mẫm không định hướng:** Tự chế kế hoạch mà không nắm rõ hiện trạng mã nguồn, dẫn đến việc bị reject nhiều lần.
+2. **Thiếu Test kịch bản nghiệp vụ:** Kế hoạch chỉ lo viết code mà bỏ quên luồng trải nghiệm người dùng (Epic Story) và các ca biên nghiệp vụ (Business Edge Cases).
+3. **Nghiệm thu bằng mắt (Blind Approval):** Code xong tự nhận hoàn thành mà không có biên lai chạy test thực tế (Test Execution Receipt).
+4. **Gãy vỡ liên kết ngầm (Unchecked Blast Radius):** Sửa code làm hỏng các module tầng trên mà không kiểm tra đồ thị phụ thuộc ngược.
 
-**`oc-advisor`** giải quyết triệt để các vấn đề trên bằng cách thiết lập vị trí **Stage-3 Definitive Gatekeeper** trong OpenCode:
-- **Độc lập & Khách quan:** Hoạt động như một subagent/primary riêng biệt, không bị cuốn vào thiên kiến của agent đang trực tiếp viết code.
-- **Bắt buộc kịch bản test nghiệp vụ (Business Test & Edge Cases Enforcement):** Bắt buộc Blueprint phải có ma trận kiểm thử bao quát toàn bộ Epic Story của người dùng và các Edge Cases nghiệp vụ phức tạp trước khi code.
-- **Quyền hạn tối cao 1 lần (1-Pass Gate):** Được kích hoạt đúng 1 lần cho mỗi cổng kiểm soát (Blueprint Gate hoặc Delivery Gate). Tuyệt đối không lặp vòng review-fix ngầm.
-- **Neo vào thực tế (Disk Reality & SOT-Graph):** Được cấp quyền truy cập các công cụ AST kiến trúc (`sot-graph_sot_search`, `sot-graph_sot_diff_impact`, `sot-graph_sot_usages`, `read`, `grep`, `glob`) để rà soát bán kính ảnh hưởng thực tế.
+**`oc-advisor`** giải quyết triệt để các vấn đề trên với mô hình kết hợp **"Tư vấn đi trước (Shift-Left) + Thẩm định chốt chặn (Gatekeeper)"**:
+- **Tư vấn định hướng trước khi lập plan (Pre-Planning Consultation):** Định hướng kiến trúc, chỉ rõ ranh giới file, liệt kê checklist edge cases bắt buộc.
+- **Bắt buộc kịch bản nghiệp vụ người dùng & Edge Cases:** Blueprint phải có ma trận kiểm thử người dùng đầy đủ mới được duyệt qua Gate 1.
+- **Quyền hạn thẩm định dứt khoát (1-Pass Gate):** Ra phán quyết một lần duy nhất (`APPROVED` hoặc `REJECTED`), tuyệt đối không lặp vòng review-fix ngầm.
+- **Neo vào thực tế (Disk Reality & SOT-Graph):** Sử dụng bộ công cụ AST (`sot_search`, `sot_diff_impact`, `sot_usages`, `read`, `grep`, `glob`) để rà soát thực tế trên ổ đĩa.
 
 ---
 
-## 🏛️ Hai cổng kiểm soát cốt lõi (Two Core Gates)
+## 🏛️ Hai chế độ làm việc (Two Operational Modes)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                 MAIN AGENT / ORCHESTRATOR                   │
-└──────────────┬───────────────────────────────▲──────────────┘
-               │                               │
-    [Gate 1: Blueprint Request]     [Gate 1 Verdict: Approved/Rejected]
-               ▼                               │
-┌──────────────────────────────────────────────┴──────────────┐
-│                    STAGE-3 ADVISOR AGENT                    │
-│  - Phê duyệt Blueprint kiến trúc (Pre-Implementation)        │
-│  - Bắt buộc Kịch bản Nghiệp vụ Người dùng & Edge Cases      │
-│  - Thẩm định Bằng chứng Chạy Test & Blast Radius (Post-Imp)  │
-└─────────────────────────────────────────────────────────────┘
+                       BƯỚC 0: TƯ VẤN ĐỊNH HƯỚNG (Consultation)
+     [Main Agent] ──────────────────────────────────────────► [Advisor]
+                  "Tôi muốn làm tính năng X,                 - Tra cứu SOT-Graph tìm modules liên quan
+                   hãy định hướng kiến trúc, ranh giới file, - Vạch ra rủi ro tiềm ẩn
+                   và các edge cases nghiệp vụ cần đưa vào?"  - Liệt kê Checklist Edge Cases bắt buộc
+                  ◄──────────────────────────────────────────
+                         Trả về: Architectural Guidance
+
+                                       │
+                                       ▼
+                    BƯỚC 1: SOẠN VÀ DUYỆT PLAN (Gate 1: Blueprint Gate)
+     [Main Agent] ──(Soạn Plan chuẩn theo Checklist)────────► [Advisor] ──► [VERDICT: APPROVED] (1-Pass)
+
+                                       │
+                                       ▼
+                    BƯỚC 2: CODE, TEST & NGHIỆM THU (Gate 2: Delivery Gate)
+     [Workers] ─────(Thực thi code + chạy test nghiệp vụ)────► [Advisor] ──► [VERDICT: APPROVED] (Release)
 ```
 
-### 1. Blueprint Approval Gate (Trước khi viết code)
+### 🔹 Chế độ 1: Tư vấn định hướng (Pre-Planning Consultation)
+Kích hoạt trước khi soạn Plan khi Main Agent hoặc User cần định hướng:
+- Tra cứu SOT-Graph để phân tích hiện trạng mã nguồn, các module sẵn có.
+- Trả về:
+  1. Kiến trúc đề xuất & Ranh giới sở hữu file (File Ownership) để tránh xung đột khi làm song song.
+  2. Các ràng buộc kiến trúc & bảo mật cần bảo toàn (Invariants).
+  3. **Ma trận Checklist Edge Cases nghiệp vụ bắt buộc** phải đưa vào Plan.
+*(Lưu ý: Chế độ này đưa ra lời khuyên định hướng, KHÔNG trả về phán quyết Gatekeeper APPROVED/REJECTED).*
+
+---
+
+### 🔹 Chế độ 2: Thẩm định chốt chặn (Gatekeeper Authority - 2 Gates)
+
+#### 1. Blueprint Approval Gate (Trước khi viết code)
 Khi Main Agent lập xong Blueprint hoặc kế hoạch JIT Wave:
-- **Xác minh kiến trúc & ranh giới:** Mục tiêu rõ ràng, không có bước mơ hồ, ranh giới file (file ownership) phân định rành mạch giữa các worker.
+- **Xác minh kiến trúc & ranh giới:** Mục tiêu rõ ràng, không có bước mơ hồ, ranh giới file phân định rành mạch giữa các worker.
 - **Bắt buộc Ma trận Kịch bản Test Nghiệp vụ (Business Test Matrix):**
-  1. *Epic Story / User Journey:* Luồng nghiệp vụ người dùng từ đầu đến cuối (Actor -> Trigger -> Business Logic Validation -> State Transition -> Audit/Event).
+  1. *Epic Story / User Journey:* Luồng nghiệp vụ người dùng từ đầu đến cuối (`Actor -> Trigger -> Business Logic Validation -> State Transition -> Audit/Event`).
   2. *Business Edge Cases (Edge cases nghiệp vụ):* Giá trị biên, trạng thái nghiệp vụ không hợp lệ (double submit, tài khoản âm tiền, token hết hạn), vi phạm phân quyền role/tenant, sự cố mạng/timeout retry.
   3. *Lệnh test mục tiêu:* CLI test commands cụ thể và fixtures kiểm thử.
 - **Hard Rule:** Nếu Blueprint thiếu kịch bản test nghiệp vụ người dùng hoặc edge cases ➔ Advisor **REJECT ngay lập tức**.
 
-### 2. Delivery & Release Gate (Sau khi hoàn thành code)
+#### 2. Delivery & Release Gate (Sau khi hoàn thành code)
 Khi code đã viết xong, test đã chạy và Tier-1 Reviewer đã rà soát:
 - **Kiểm chứng độc lập:** Rà soát đóng lỗi triệt để, bảo mật, tác dụng phụ đa file, tính nhất quán AST.
 - **Quét bán kính tác động ngược (Reverse Blast Radius):** Dùng `sot_diff_impact` và `sot_usages` để bảo đảm không làm gãy vỡ upstream callers.
@@ -59,9 +77,7 @@ Khi code đã viết xong, test đã chạy và Tier-1 Reviewer đã rà soát:
 
 ---
 
-## 📋 Cấu trúc phản hồi chuẩn (Mandatory Output Schema)
-
-Advisor luôn trả về báo cáo cấu trúc chuẩn xác:
+## 📋 Cấu trúc phản hồi chuẩn cho Gatekeeper (Mandatory Output Schema)
 
 ```markdown
 ### ADVISOR VERDICT: [APPROVED | REJECTED | NEEDS_REVISION]
@@ -84,8 +100,6 @@ Advisor luôn trả về báo cáo cấu trúc chuẩn xác:
 
 ## 🚀 Cài đặt (Installation)
 
-Chạy script cài đặt nhanh để đưa subagent vào OpenCode:
-
 ```bash
 cd ~/code/GitHub/oc-advisor
 ./install.sh
@@ -100,11 +114,16 @@ cp agents/advisor.md ~/.config/opencode/agents/advisor.md
 
 ## 💻 Cách sử dụng trong OpenCode
 
-### 1. Gọi từ Main Agent qua công cụ `task`
+### 1. Xin định hướng trước khi lập plan (Consultation Mode):
+```json
+{
+  "description": "Consult advisor for plan direction and edge cases",
+  "prompt": "Tôi muốn làm tính năng X. Trước khi lên plan, hãy tư vấn định hướng kiến trúc, ranh giới file, và danh sách các edge cases nghiệp vụ cần đưa vào kế hoạch.",
+  "subagent_type": "advisor"
+}
+```
 
-Khi Main Agent cần thẩm định kế hoạch hoặc nghiệm thu sản phẩm, gọi công cụ `task` với `subagent_type: "advisor"`:
-
-#### A. Duyệt Kế hoạch (Blueprint Approval):
+### 2. Duyệt Kế hoạch (Gate 1: Blueprint Gate):
 ```json
 {
   "description": "Gatekeep architectural blueprint and business test scenarios",
@@ -113,7 +132,7 @@ Khi Main Agent cần thẩm định kế hoạch hoặc nghiệm thu sản phẩ
 }
 ```
 
-#### B. Nghiệm thu Release (Delivery Gate):
+### 3. Nghiệm thu Release (Gate 2: Delivery Gate):
 ```json
 {
   "description": "Final gatekeeper release verification",
@@ -122,20 +141,20 @@ Khi Main Agent cần thẩm định kế hoạch hoặc nghiệm thu sản phẩ
 }
 ```
 
-### 2. Chạy trực tiếp từ dòng lệnh (Standalone CLI)
+### 4. Chạy trực tiếp từ dòng lệnh (Standalone CLI):
 ```bash
-opencode run --agent advisor "Thẩm định git diff HEAD~1 và xác minh kết quả test"
+opencode run --agent advisor "Tư vấn kiến trúc để thêm cơ chế multi-tenant vào hệ thống hiện tại"
 ```
 
 ---
 
 ## 🛡️ Quyền hạn & Công cụ (Permissions & Tools)
 
-Theo nguyên tắc an toàn, Advisor là **Read-only Agent**, không được phép sửa code trực tiếp:
+Advisor là **Read-only Agent**, chỉ quan sát và phân tích đồ thị AST, không sửa code:
 - ✅ `read`, `grep`, `glob`: Đọc code và kiểm tra vị trí file.
 - ✅ `sot-graph_sot_search`, `sot-graph_sot_map`, `sot-graph_sot_explore`, `sot-graph_sot_usages`, `sot-graph_sot_implementations`: Rà soát đồ thị gọi hàm AST và định danh symbol.
 - ✅ `sot-graph_sot_diff_impact`, `sot-graph_sot_diff_impact_receipt`, `sot-graph_sot_scope_receipt`, `sot-graph_sot_verify_drift`: Đo lường bán kính rủi ro git diff.
-- ✅ `context-mode_ctx_search`, `context-mode_ctx_execute_file`: Phân tích log/context dung lượng lớn mà không làm tràn context.
+- ✅ `context-mode_ctx_search`, `context-mode_ctx_execute_file`: Phân tích log/context dung lượng lớn.
 - ❌ CẤM: `write`, `edit`, `bash` (không chỉnh sửa file vật lý hay chạy script tuỳ ý).
 
 ---
@@ -149,6 +168,7 @@ oc-advisor/
 ├── agents/
 │   └── advisor.md                     # Agent definition chuẩn OpenCode (mode: all)
 └── examples/
+    ├── consultation_prompt.md         # Mẫu prompt xin định hướng trước khi lập plan
     ├── blueprint_approval_prompt.md   # Mẫu prompt duyệt blueprint kèm kịch bản test nghiệp vụ
     ├── delivery_approval_prompt.md    # Mẫu prompt nghiệm thu release kèm Test Receipt
     └── sample_verdicts.md             # Mẫu kết quả phán quyết Approved/Rejected
