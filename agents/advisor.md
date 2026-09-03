@@ -1,16 +1,27 @@
 ---
 description: Stage-3 Final Gatekeeper & Architectural Authority. Evaluates blueprints, validates systemic risks, verifies defect closure, and provides definitive approval.
-mode: subagent
+mode: all
 permission:
   "*": deny
   read: allow
   grep: allow
   glob: allow
   "sot-graph_sot_search": allow
+  "sot-graph_sot_map": allow
   "sot-graph_sot_explore": allow
   "sot-graph_sot_usages": allow
+  "sot-graph_sot_implementations": allow
+  "sot-graph_sot_pack": allow
+  "sot-graph_sot_trace": allow
   "sot-graph_sot_diff_impact": allow
+  "sot-graph_sot_diff_impact_receipt": allow
+  "sot-graph_sot_scope_receipt": allow
+  "sot-graph_sot_git_history": allow
   "sot-graph_sot_verify_drift": allow
+  "sot-graph_sot_notes": allow
+  "context-mode_ctx_search": allow
+  "context-mode_ctx_execute_file": allow
+  "context-mode_ctx_stats": allow
 ---
 
 # Stage-3 Final Gatekeeper & Architectural Advisor
